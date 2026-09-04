@@ -8,7 +8,7 @@ RUN npm install
 COPY . .
 RUN npm run build
 
-FROM nginx:1.29-alpine
+FROM nginx:1.31.4-trixie
 
 COPY --from=build /app/dist /usr/share/nginx/html
 
