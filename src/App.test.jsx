@@ -6,11 +6,11 @@ import App from "./App";
 const mockEmployees = [
   {
     id: 1,
-    first_name: "John",
+    first_name: "Bryan",
     last_name: "Doe",
     department: "Engineering",
     role: "Software Engineer",
-    email: "john.doe@example.com",
+    email: "bryan.doe@example.com",
   },
   {
     id: 2,
@@ -59,7 +59,7 @@ describe("Employee Directory", () => {
 
     render(<App />);
 
-    expect(await screen.findByText("John Doe")).toBeInTheDocument();
+    expect(await screen.findByText("Bryan Doe")).toBeInTheDocument();
     expect(screen.getByText("Jane Smith")).toBeInTheDocument();
 
     expect(screen.getByText("Software Engineer")).toBeInTheDocument();
@@ -94,7 +94,7 @@ describe("Employee Directory", () => {
 
     render(<App />);
 
-    await screen.findByText("John Doe");
+    await screen.findByText("Bryan Doe");
 
     const nextButton = screen.getByRole("button", {
       name: "Next →",
