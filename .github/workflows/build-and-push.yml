@@ -88,3 +88,48 @@ jobs:
           name: devops-employee-frontend-${{ github.sha }}
           path: devops-employee-frontend.tar
           retention-days: 1
+  
+
+  push-to-acr:
+    name: Push Docker Image to ACR
+    needs: build-and-scan
+    environment: frontend-acr
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: devops-employee-frontend-${{ github.sha }}
+
+      - name: Load Docker image
+        run: |
+          docker load \
+            --input devops-employee-frontend.tar
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Login to ACR
+        run: |
+          az acr login --name ${{ vars.ACR_NAME }}
+
+      - name: Tag Docker image
+        run: |
+          docker tag \
+            devops-employee-frontend:${{ github.sha }} \
+            ${{ vars.ACR_LOGIN_SERVER }}/devops-employee-frontend:${{ github.sha }}
+
+      - name: Push Docker image
+        run: |
+          docker push \
+            ${{ vars.ACR_LOGIN_SERVER }}/devops-employee-frontend:${{ github.sha }}
