@@ -14,7 +14,8 @@ jobs:
     name: Secret scan
     runs-on: ubuntu-latest
 
-    permissions: read
+    permissions: 
+      contents: read
 
     steps:
       - name: Checkout
@@ -48,28 +49,28 @@ jobs:
       - name: Run tests
         run: npm test
   
-  
+
   build-and-scan:
     name: Build and Scan Docker Image
     needs: 
-     - test
-     - secret-scan
+      - test
+      - secret-scan
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Build Docker image
         run: |
           docker build \
-            -t devops-employee-backend:${{ github.sha }} \
+            -t devops-employee-frontend:${{ github.sha }} \
             .
 
       - name: Scan Docker image
         uses: aquasecurity/trivy-action@v0.36.0
         with:
-          image-ref: devops-employee-backend:${{ github.sha }}
+          image-ref: devops-employee-frontend:${{ github.sha }}
           format: table
           exit-code: 1
           ignore-unfixed: true
@@ -78,12 +79,12 @@ jobs:
       - name: Save Docker image
         run: |
           docker save \
-            devops-employee-backend:${{ github.sha }} \
-            -o devops-employee-backend.tar
+            devops-employee-frontend:${{ github.sha }} \
+            -o devops-employee-frontend.tar
 
       - name: Upload Docker image artifact
         uses: actions/upload-artifact@v4
         with:
-          name: devops-employee-backend-${{ github.sha }}
-          path: devops-employee-backend.tar
+          name: devops-employee-frontend-${{ github.sha }}
+          path: devops-employee-frontend.tar
           retention-days: 1
