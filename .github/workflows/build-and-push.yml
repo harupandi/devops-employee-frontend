@@ -1,43 +1,89 @@
-name: Build and Push Frontend
+name: Frontend CI
 
 on:
+  pull_request:
+    branches:
+      - main
+
   push:
     branches:
       - main
 
-permissions:
-  id-token: write
-  contents: read
-
-env:
-  REGISTRY: <your-acr-name>.azurecr.io
-  IMAGE_NAME: frontend
-
 jobs:
-  build-and-push:
+  secret-scan:
+    name: Secret scan
+    runs-on: ubuntu-latest
+
+    permissions: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Run Gitleaks
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  
+
+  test:
+    name: Frontend tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+  
+  
+  build-and-scan:
+    name: Build and Scan Docker Image
+    needs: 
+     - test
+     - secret-scan
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Azure Login
-        uses: azure/login@v2
-        with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Login to ACR
-        run: |
-          az acr login --name <your-acr-name>
-
       - name: Build Docker image
         run: |
           docker build \
-            -t $REGISTRY/$IMAGE_NAME:${{ github.sha }} \
+            -t devops-employee-backend:${{ github.sha }} \
             .
 
-      - name: Push Docker image
+      - name: Scan Docker image
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: devops-employee-backend:${{ github.sha }}
+          format: table
+          exit-code: 1
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+      
+      - name: Save Docker image
         run: |
-          docker push $REGISTRY/$IMAGE_NAME:${{ github.sha }}
+          docker save \
+            devops-employee-backend:${{ github.sha }} \
+            -o devops-employee-backend.tar
+
+      - name: Upload Docker image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: devops-employee-backend-${{ github.sha }}
+          path: devops-employee-backend.tar
+          retention-days: 1
