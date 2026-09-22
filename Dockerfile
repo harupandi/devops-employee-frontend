@@ -8,7 +8,7 @@ RUN npm ci --no-audit --no-fund
 COPY . .
 RUN npm run build
 
-FROM nginx:1.31.5-trixie
+FROM nginx:1.31.6-trixie
 
 COPY --from=build /app/dist /usr/share/nginx/html
 
