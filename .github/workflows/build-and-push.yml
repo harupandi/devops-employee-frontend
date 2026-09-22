@@ -133,3 +133,34 @@ jobs:
         run: |
           docker push \
             ${{ vars.ACR_LOGIN_SERVER }}/devops-employee-frontend:${{ github.sha }}
+
+
+  update-k8s-dev:
+    name: Update K8s dev frontend image
+    needs: push-to-acr
+    environment: frontend-k8s-dev
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout K8s repo
+        uses: actions/checkout@v4
+        with:
+          repository: harupandi/devops-employee-k8s
+          token: ${{ secrets.K8S_REPO_TOKEN }}
+          path: k8s
+
+      - name: Update frontend image
+        working-directory: k8s
+        run: |
+          yq -i '.frontend.image.tag = "${{ github.sha }}"' \
+            charts/devops-employee/values-dev.yaml
+
+      - name: Commit and push
+        working-directory: k8s
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add charts/devops-employee/values-dev.yaml
+          git commit -m "chore: update frontend image to ${{ github.sha }}"
+          git push

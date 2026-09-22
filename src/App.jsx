@@ -48,7 +48,7 @@ function App() {
         <header className="hero">
           <div>
             <p className="eyebrow">DEVOPS DEMO</p>
-            <h1>Employee Directory</h1>
+            <h1>Employee Directory v1</h1>
             <p className="subtitle">
               React frontend consuming a RESTful Flask API.
             </p>
